@@ -1,6 +1,13 @@
 "use strict"
+
+// constant variables for jsonbin.io API
+const JSONBIN_API_KEY = "$2a$10$6uZAiEbuqTFIYJ4dQz9QKezztkfgKeTe0s95wGX34AnY/sPV3xNyW";
+const JSONBIN_BIN_ID = "670d5312ad19ca34f8b86a71";
+
 let todoList = []; //declares a new array for Your todo list
 
+
+// loads todolist from local browser cache - not used anymore(data is loaded from jsonbin.io)
 let initList = function() {
 
     //reading list values from browser cache(if any of them exists)
@@ -28,54 +35,151 @@ let initList = function() {
     }
 }
 
-initList();
+//initList();
 
-let updateTodoList = function() {
-    let todoListDiv =
-        document.getElementById("todoListView");
 
-    //remove all elements
-    while (todoListDiv.firstChild) {
-        todoListDiv.removeChild(todoListDiv.firstChild);
-    }
 
-    //add all elements and filter user input
+// jsonbinio API - getting data from external api
 
-    let filterInput = document.getElementById("inputSearch");
-    
+let req = new XMLHttpRequest();
 
-    for (let todo in todoList) {
+req.onreadystatechange = () => {
+  if (req.readyState == XMLHttpRequest.DONE) {
+    let resp = req.responseText;
 
-        // filtering user input using search text field
-        if ((filterInput.value == "")
-            || (todoList[todo].title.includes(filterInput.value))
-            || (todoList[todo].description.includes(filterInput.value))) 
-            {
-                let newDeleteButton = document.createElement("input");
-                newDeleteButton.type = "button";
-                newDeleteButton.value = "X";
-                newDeleteButton.addEventListener("click", 
-                    function() {
-                        deleteTodo(todo);
-                    }
-                )
-                let newElement = document.createElement("div");
-                let newContent = document.createTextNode(
-                    todoList[todo].title + " " + todoList[todo].description);
-                newElement.appendChild(newContent);
-                newElement.appendChild(newDeleteButton);
-                todoListDiv.appendChild(newElement);
+    if (resp != null) {
+
+        // parsing data - getting record value, which are all todoList items in JSON format
+        let loadedTodos = JSON.parse(resp).record;
+
+        // iterating on every item and creating toDoList from received data
+        for (let t in loadedTodos) {
+            console.log(loadedTodos[t]);
+            todoList.push(loadedTodos[t]);
         }
     }
+  }
+};
+
+
+// Connection initialization, keys specification(jsonbin.io API)
+req.open("GET", "https://api.jsonbin.io/v3/b/".concat(JSONBIN_BIN_ID), true);
+req.setRequestHeader("X-Master-Key", JSONBIN_API_KEY);
+req.send();
+
+
+
+// jsonbinio API - updating data on external data source
+let updateJSONBin = function() {
+    let req = new XMLHttpRequest();
+
+    req.onreadystatechange = () => {
+        if (req.readyState == XMLHttpRequest.DONE) {
+            console.log(req.responseText);
+        }
+    };
+
+    // PUT request - updates data on remote data source(jsonbinio)
+    // ALL DATA WILL BE OVERWRITTEN DURING THIS OPERATION, SO ALL ITEMS FROM TODOLIST WILL BE SEND TO THE JSONBINIO
+    req.open("PUT", "https://api.jsonbin.io/v3/b/".concat(JSONBIN_BIN_ID), true);
+    req.setRequestHeader("Content-Type", "application/json");
+    req.setRequestHeader("X-Master-Key", JSONBIN_API_KEY);
+
+
+    console.log(JSON.stringify(todoList));
+
+    //converting todoList to JSON and sending it to remote data source
+    req.send(JSON.stringify(todoList));
 }
 
 
+// update toDoList 
+let updateTodoList = function() {
+    if (todoList != null) {
+        let todoListDiv =
+            document.getElementById("todoListView");
+
+        //remove all elements
+        while (todoListDiv.firstChild) {
+            todoListDiv.removeChild(todoListDiv.firstChild);
+        }
+
+        //add all elements and filter user input
+
+        let filterInput = document.getElementById("inputSearch");
+        
+        let newTable = document.createElement("table");
+
+        let colmunNumber = Object.values(todoList[0]).length;
+        let deleteColumn = 1;
+
+        // table headers
+        let header = document.createElement("tr");
+        let titleValues = ["Category", "Description", "Due date", "Place", "Title", "Delete"];
+
+        for (let column = 0; column < colmunNumber + deleteColumn; column++) {
+            let currTh = document.createElement("th");
+            let currText = document.createTextNode(titleValues[column]);
+            currTh.appendChild(currText);
+            header.appendChild(currTh);
+        }
+
+        newTable.appendChild(header)
+
+        for (let todo in todoList) {
+
+            // filtering user input using search text field
+            // textfield empty - show all items
+            // when user starts typing letters, filters will apply and output will become filtered
+
+            let currTodoItem = todoList[todo];
+            if ((filterInput.value == "")
+                || (currTodoItem.title.includes(filterInput.value))
+                || (currTodoItem.description.includes(filterInput.value))) 
+                {
+                    let newDeleteButton = document.createElement("input");
+                    newDeleteButton.type = "button";
+                    newDeleteButton.value = "X";
+                    newDeleteButton.addEventListener("click", 
+                        function() {
+                            deleteTodo(todo);
+                        }
+                    )
+                    // row
+                    let trElement = document.createElement("tr");
+                    let textValues = [currTodoItem.category, currTodoItem.description, new Date(currTodoItem.dueDate).toLocaleDateString("en-US"), currTodoItem.place, currTodoItem.title]
+
+                    // columns - adding 5 columns from todoList
+                    
+                    for (let column = 0; column < colmunNumber; column++) {
+                        let currTd = document.createElement("td");
+                        let currText = document.createTextNode(textValues[column]);
+                        currTd.appendChild(currText);
+                        trElement.appendChild(currTd);
+                    }
+
+                    // Adding last column with delete button
+                    trElement.appendChild(document.createElement("td")).appendChild(newDeleteButton);
+                    
+                    //adding row to the table
+                    newTable.appendChild(trElement);
+
+            }
+        }
+        //adding final table to the div
+        todoListDiv.appendChild(newTable);
+    }
+}
+
+
+// deleteTodo function - deletes specified item from toDoList and updates remote jsonbin data source
 let deleteTodo = function(index) {
     todoList.splice(index, 1);
+    updateJSONBin();
 }
 
 
-
+// function for adding item to todoList - adds item locally and updates item on remote data source(jsonbin)
 let addTodo = function () {
     let inputTitle = document.getElementById("inputTitle");
     let inputDesc = document.getElementById("inputDesc");
@@ -95,11 +199,16 @@ let addTodo = function () {
         dueDate: newDate
     };
 
+    //updating local toDoList
     todoList.push(newTodo);
 
-    // adding todolist to browser cache
+    // updating remote jsonbinio data
+    updateJSONBin();
+
+    // adding todolist to browser cache - not used anymore
     window.localStorage.setItem("todos", JSON.stringify(todoList));
 
 }
 
+// updating list every one second
 setInterval(updateTodoList, 1000);
