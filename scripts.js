@@ -1,10 +1,12 @@
 "use strict"
 
 // constant variables for jsonbin.io API
-const JSONBIN_API_KEY = "$2a$10$6uZAiEbuqTFIYJ4dQz9QKezztkfgKeTe0s95wGX34AnY/sPV3xNyW";
-const JSONBIN_BIN_ID = "670d5312ad19ca34f8b86a71";
+const JSONBIN_API_KEY = JSONBIN_CODES.API_KEY;
+const JSONBIN_BIN_ID = JSONBIN_CODES.BIN_ID;
 
 let todoList = []; //declares a new array for Your todo list
+let isFilterActive = false;
+let filteredList = [];
 
 
 // loads todolist from local browser cache - not used anymore(data is loaded from jsonbin.io)
@@ -94,8 +96,12 @@ let updateJSONBin = function() {
 
 
 // update toDoList 
-let updateTodoList = function() {
-    if (todoList != null) {
+let updateTodoList = function(list = todoList) {
+    if (isFilterActive) {
+        list = filteredList;
+    }
+
+    if (list != null) {
         let todoListDiv =
             document.getElementById("todoListView");
 
@@ -110,7 +116,7 @@ let updateTodoList = function() {
         
         let newTable = document.createElement("table");
 
-        let colmunNumber = Object.values(todoList[0]).length;
+        let colmunNumber = Object.values(list[0]).length;
         let deleteColumn = 1;
 
         // table headers
@@ -126,13 +132,13 @@ let updateTodoList = function() {
 
         newTable.appendChild(header)
 
-        for (let todo in todoList) {
+        for (let todo in list) {
 
             // filtering user input using search text field
             // textfield empty - show all items
             // when user starts typing letters, filters will apply and output will become filtered
 
-            let currTodoItem = todoList[todo];
+            let currTodoItem = list[todo];
             if ((filterInput.value == "")
                 || (currTodoItem.title.includes(filterInput.value))
                 || (currTodoItem.description.includes(filterInput.value))) 
@@ -208,6 +214,31 @@ let addTodo = function () {
     // adding todolist to browser cache - not used anymore
     window.localStorage.setItem("todos", JSON.stringify(todoList));
 
+}
+
+let filterByDate = function() {
+    let startDate = new Date(document.getElementById("startDate").value);
+    let endDate = new Date(document.getElementById("endDate").value);
+
+
+    if (startDate != null || endDate != null) {
+        startDate.setHours(0, 0, 0, 0);
+        endDate.setHours(23, 59, 59, 999);
+        filteredList = todoList.filter(todo => {
+            let dueDate = new Date(todo.dueDate);
+            dueDate.setHours(0, 0, 0, 0);
+            return dueDate >= startDate && dueDate <= endDate;
+        });
+
+        isFilterActive = true;
+        updateTodoList();
+    }
+
+}
+
+let resetFilter = function() {
+    isFilterActive = false;
+    updateTodoList();
 }
 
 // updating list every one second

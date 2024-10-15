@@ -1,12 +1,25 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
     <head>
         <link rel="stylesheet" type="text/css" href="theme.css">
         <script src="scripts.js" defer></script>
+        <script src="keys.js"></script>
         <title>MyTODO App</title>
     </head>
     <body>
         <h1>MyNotes</h1>
+        <div>
+            <label>Search</label>
+            <input type="text" id="inputSearch" placeholder="type your search here...">
+        </div>
+        <div>
+            <label>Filter by date from: </label>
+            <input type="date" id="startDate">
+            <label> to: </label>
+            <input type="date" id="endDate">
+            <input type="button" value="Apply" onclick="filterByDate()"/>
+            <input type="button" value="Reset" onclick="resetFilter()"/>
+        </div>
         <div id="todoListView"></div>
         <div>
             <form>
@@ -21,10 +34,6 @@
                 <input type="button" value="add"
                 onclick="addTodo()"/>
             </form>
-        </div>
-        <div>
-            <label>Search</label>
-            <input type="text" id="inputSearch" placeholder="type your search here...">
         </div>
     </body>
 </html>
