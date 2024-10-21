@@ -94,85 +94,78 @@ let updateJSONBin = function() {
     req.send(JSON.stringify(todoList));
 }
 
-
-// update toDoList 
+// updateTodoList function - updates todoList view in browser
 let updateTodoList = function(list = todoList) {
     if (isFilterActive) {
         list = filteredList;
     }
 
     if (list != null) {
-        let todoListDiv =
-            document.getElementById("todoListView");
+        let todoListDiv = document.getElementById("todoListView");
 
-        //remove all elements
         while (todoListDiv.firstChild) {
             todoListDiv.removeChild(todoListDiv.firstChild);
         }
 
-        //add all elements and filter user input
-
         let filterInput = document.getElementById("inputSearch");
-        
         let newTable = document.createElement("table");
+        newTable.className = "table table-striped";
 
-        let colmunNumber = Object.values(list[0]).length;
+        let columnNumber = Object.values(list[0]).length - 1; // Exclude the "Category" column
         let deleteColumn = 1;
 
-        // table headers
         let header = document.createElement("tr");
-        let titleValues = ["Category", "Description", "Due date", "Place", "Title", "Delete"];
+        let titleValues = ["Title", "Description", "Place", "Due date", "Delete"];
 
-        for (let column = 0; column < colmunNumber + deleteColumn; column++) {
+        for (let column = 0; column < columnNumber + deleteColumn; column++) {
             let currTh = document.createElement("th");
             let currText = document.createTextNode(titleValues[column]);
             currTh.appendChild(currText);
             header.appendChild(currTh);
         }
 
-        newTable.appendChild(header)
+        newTable.appendChild(header);
 
         for (let todo in list) {
-
-            // filtering user input using search text field
-            // textfield empty - show all items
-            // when user starts typing letters, filters will apply and output will become filtered
-
             let currTodoItem = list[todo];
-            if ((filterInput.value == "")
+            if ((filterInput.value === "")
                 || (currTodoItem.title.includes(filterInput.value))
-                || (currTodoItem.description.includes(filterInput.value))) 
-                {
-                    let newDeleteButton = document.createElement("input");
-                    newDeleteButton.type = "button";
-                    newDeleteButton.value = "X";
-                    newDeleteButton.addEventListener("click", 
-                        function() {
-                            deleteTodo(todo);
-                        }
-                    )
-                    // row
-                    let trElement = document.createElement("tr");
-                    let textValues = [currTodoItem.category, currTodoItem.description, new Date(currTodoItem.dueDate).toLocaleDateString("en-US"), currTodoItem.place, currTodoItem.title]
+                || (currTodoItem.description.includes(filterInput.value))) {
 
-                    // columns - adding 5 columns from todoList
-                    
-                    for (let column = 0; column < colmunNumber; column++) {
-                        let currTd = document.createElement("td");
-                        let currText = document.createTextNode(textValues[column]);
-                        currTd.appendChild(currText);
-                        trElement.appendChild(currTd);
+                let newDeleteButton = document.createElement("input");
+                newDeleteButton.type = "button";
+                newDeleteButton.value = "X";
+                newDeleteButton.className = "btn btn-danger";
+                newDeleteButton.addEventListener("click",
+                    function() {
+                        deleteTodo(todo);
                     }
+                );
 
-                    // Adding last column with delete button
-                    trElement.appendChild(document.createElement("td")).appendChild(newDeleteButton);
-                    
-                    //adding row to the table
-                    newTable.appendChild(trElement);
+                let trElement = document.createElement("tr");
+                let textValues = [
+                    currTodoItem.title,
+                    currTodoItem.description,
+                    currTodoItem.place,
+                    new Date(currTodoItem.dueDate).toLocaleDateString("pl-PL")
+                ];
 
+                for (let column = 0; column < columnNumber; column++) {
+                    let currTd = document.createElement("td");
+                    let currText = document.createTextNode(textValues[column]);
+                    currTd.appendChild(currText);
+                    trElement.appendChild(currTd);
+                }
+
+                let deleteTd = document.createElement("td");
+                deleteTd.appendChild(newDeleteButton);
+                deleteTd.style.textAlign = "center";
+                trElement.appendChild(deleteTd);
+
+                // Adding row to the table
+                newTable.appendChild(trElement);
             }
         }
-        //adding final table to the div
         todoListDiv.appendChild(newTable);
     }
 }
@@ -216,6 +209,7 @@ let addTodo = function () {
 
 }
 
+// filterByDate function - filters todoList by date range
 let filterByDate = function() {
     let startDate = new Date(document.getElementById("startDate").value);
     let endDate = new Date(document.getElementById("endDate").value);
@@ -236,8 +230,11 @@ let filterByDate = function() {
 
 }
 
+// reset filter function - resets filter and updates todoList
 let resetFilter = function() {
     isFilterActive = false;
+    document.getElementById("startDate").value = "";
+    document.getElementById("endDate").value = "";
     updateTodoList();
 }
 
