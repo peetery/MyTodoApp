@@ -3,6 +3,9 @@
 // constant variables for jsonbin.io API
 const JSONBIN_API_KEY = JSONBIN_CODES.API_KEY;
 const JSONBIN_BIN_ID = JSONBIN_CODES.BIN_ID;
+const GROQ_API_KEY = JSONBIN_CODES.GROQ_API_KEY;
+
+console.log(JSONBIN_BIN_ID);
 
 let todoList = []; //declares a new array for Your todo list
 let isFilterActive = false;
@@ -42,6 +45,35 @@ let initList = function() {
 
 
 // jsonbinio API - getting data from external api
+
+let groqRequest = new XMLHttpRequest();
+
+
+groqRequest.onreadystatechange = () => {
+    if(groqRequest.readyState == XMLHttpRequest.DONE) {
+        let groqResponse = groqRequest.responseType;
+        if(groqResponse != null) {
+            console.log("groq message:")
+            console.log(groqResponse);
+        }
+    }
+}
+
+groqRequest.open("POST", "https://api.groq.com/openai/v1/chat/completions", true);
+groqRequest.setRequestHeader("Authorization", "Bearer ".concat(GROQ_API_KEY));
+groqRequest.setRequestHeader("Content-Type", "application/json");
+groqRequest.send({
+    "messages": [
+      {
+        "role": "You have to specify correct category to given desctiption - an item from todolist. Specify only one category. Return JSON with key - category and created value associated to the key",
+        "content": "Homework for thursday"
+      }
+    ],
+    "model": "mixtral-8x7b-32768"
+  });
+
+
+
 
 let req = new XMLHttpRequest();
 
