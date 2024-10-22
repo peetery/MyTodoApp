@@ -5,7 +5,6 @@ const JSONBIN_API_KEY = JSONBIN_CODES.API_KEY;
 const JSONBIN_BIN_ID = JSONBIN_CODES.BIN_ID;
 const GROQ_API_KEY = JSONBIN_CODES.GROQ_API_KEY;
 
-console.log(JSONBIN_BIN_ID);
 
 let todoList = []; //declares a new array for Your todo list
 let isFilterActive = false;
