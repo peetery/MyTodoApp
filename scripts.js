@@ -47,20 +47,6 @@ let initList = function() {
 // jsonbinio API - getting data from external api
 
 
-
-
-/* groqRequest.onreadystatechange = function() {
-    if(groqRequest.readyState == XMLHttpRequest.DONE) {
-        let groqResponse = groqRequest.responseText;
-        if(groqResponse != null) {
-            console.log("groq message:")
-            let currResponse = JSON.parse(groqResponse);
-            let currCategory = currResponse.choices[0].message.content;
-            console.log(currCategory);
-        }
-    }
-} */
-
 let sendGroqRequest = function(description) {
     return new Promise(function (resolve, reject) {
             let groqRequest = new XMLHttpRequest();
@@ -249,7 +235,7 @@ async function createCategory(description) {
 
 
 // function for adding item to todoList - adds item locally and updates item on remote data source(jsonbin)
-let addTodo = function () {
+async function addTodo() {
     let inputTitle = document.getElementById("inputTitle");
     let inputDesc = document.getElementById("inputDesc");
     let inputPlace = document.getElementById("inputPlace");
@@ -260,13 +246,15 @@ let addTodo = function () {
     let newPlace = inputPlace.value;
     let newDate = new Date(inputDate.value);
 
-    console.log("newCategory: " + newCategory);
+    //console.log("newCategory: " + newCategory);
+    let newCategory = await sendGroqRequest(newDesc);
+    console.log("new category: " + newCategory);
 
     let newTodo = {
         title: newTitle,
         description: newDesc,
         place: newPlace,
-        category: "Generating...",
+        category: newCategory,
         dueDate: newDate
     };
 
