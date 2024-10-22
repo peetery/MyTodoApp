@@ -46,31 +46,57 @@ let initList = function() {
 
 // jsonbinio API - getting data from external api
 
-let groqRequest = new XMLHttpRequest();
 
 
-groqRequest.onreadystatechange = () => {
+
+/* groqRequest.onreadystatechange = function() {
     if(groqRequest.readyState == XMLHttpRequest.DONE) {
-        let groqResponse = groqRequest.responseType;
+        let groqResponse = groqRequest.responseText;
         if(groqResponse != null) {
             console.log("groq message:")
-            console.log(groqResponse);
+            let currResponse = JSON.parse(groqResponse);
+            let currCategory = currResponse.choices[0].message.content;
+            console.log(currCategory);
         }
     }
-}
+} */
 
-groqRequest.open("POST", "https://api.groq.com/openai/v1/chat/completions", true);
-groqRequest.setRequestHeader("Authorization", "Bearer ".concat(GROQ_API_KEY));
-groqRequest.setRequestHeader("Content-Type", "application/json");
-groqRequest.send({
-    "messages": [
-      {
-        "role": "You have to specify correct category to given desctiption - an item from todolist. Specify only one category. Return JSON with key - category and created value associated to the key",
-        "content": "Homework for thursday"
-      }
-    ],
-    "model": "mixtral-8x7b-32768"
-  });
+let sendGroqRequest = function(description) {
+    return new Promise(function (resolve, reject) {
+            let groqRequest = new XMLHttpRequest();
+            groqRequest.open("POST", "https://api.groq.com/openai/v1/chat/completions", true);
+            groqRequest.setRequestHeader("Authorization", "Bearer ".concat(GROQ_API_KEY));
+            groqRequest.setRequestHeader("Content-Type", "application/json");
+            let requestData = 
+            {
+                "messages": [
+                {
+                    "role": "user",
+                    "content": "You have to specify correct category to given desctiption - an item from todolist. Specify only one category. Return plain text - created category. Item description: " + description + ". Return only single phrase - category. Do not return anything else. Return category in the same language as provided description"
+                }
+                ],
+                "model": "llama3-70b-8192"
+            }
+            groqRequest.send(JSON.stringify(requestData));
+
+            groqRequest.onreadystatechange = () => {
+                if(groqRequest.readyState == XMLHttpRequest.DONE) {
+                    let groqResponse = groqRequest.responseText;
+                    if(groqResponse != null) {
+                        console.log("groq message:")
+                        let currResponse = JSON.parse(groqResponse);
+                        let currCategory = currResponse.choices[0].message.content;
+                        console.log(currCategory);
+                        resolve(currCategory);
+                        console.log("Category: " + currCategory);
+                } else {
+                    reject(groqRequest.status);
+                }
+            }
+        }
+    });
+};
+
 
 
 
@@ -143,11 +169,11 @@ let updateTodoList = function(list = todoList) {
         let newTable = document.createElement("table");
         newTable.className = "table table-striped";
 
-        let columnNumber = Object.values(list[0]).length - 1; // Exclude the "Category" column
+        let columnNumber = Object.values(list[0]).length;
         let deleteColumn = 1;
 
         let header = document.createElement("tr");
-        let titleValues = ["Title", "Description", "Place", "Due date", "Delete"];
+        let titleValues = ["Title", "Description", "Place", "Due date", "Category", "Delete"];
 
         for (let column = 0; column < columnNumber + deleteColumn; column++) {
             let currTh = document.createElement("th");
@@ -179,7 +205,8 @@ let updateTodoList = function(list = todoList) {
                     currTodoItem.title,
                     currTodoItem.description,
                     currTodoItem.place,
-                    new Date(currTodoItem.dueDate).toLocaleDateString("pl-PL")
+                    new Date(currTodoItem.dueDate).toLocaleDateString("pl-PL"),
+                    currTodoItem.category,
                 ];
 
                 for (let column = 0; column < columnNumber; column++) {
@@ -210,6 +237,17 @@ let deleteTodo = function(index) {
 }
 
 
+async function createCategory(description) {
+    try {
+        let createdCategory = await(sendGroqRequest(description));
+        console.log("Created category: " + createdCategory);
+        
+    } catch(error) {
+        console.log("Error while creating the category: " + error);
+    }
+}
+
+
 // function for adding item to todoList - adds item locally and updates item on remote data source(jsonbin)
 let addTodo = function () {
     let inputTitle = document.getElementById("inputTitle");
@@ -222,11 +260,13 @@ let addTodo = function () {
     let newPlace = inputPlace.value;
     let newDate = new Date(inputDate.value);
 
+    console.log("newCategory: " + newCategory);
+
     let newTodo = {
         title: newTitle,
         description: newDesc,
         place: newPlace,
-        category: '',
+        category: "Generating...",
         dueDate: newDate
     };
 
