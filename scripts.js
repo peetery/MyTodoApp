@@ -39,14 +39,9 @@ let initList = function() {
     }
 }
 
-//initList();
-
-
-
 // jsonbinio API - getting data from external api
 
-
-let sendGroqRequest = function(description) {
+let sendCategoryGroqRequest = function(description) {
     return new Promise(function (resolve, reject) {
             let groqRequest = new XMLHttpRequest();
             groqRequest.open("POST", "https://api.groq.com/openai/v1/chat/completions", true);
@@ -68,12 +63,9 @@ let sendGroqRequest = function(description) {
                 if(groqRequest.readyState == XMLHttpRequest.DONE) {
                     let groqResponse = groqRequest.responseText;
                     if(groqResponse != null) {
-                        console.log("groq message:")
                         let currResponse = JSON.parse(groqResponse);
                         let currCategory = currResponse.choices[0].message.content;
-                        console.log(currCategory);
                         resolve(currCategory);
-                        console.log("Category: " + currCategory);
                 } else {
                     reject(groqRequest.status);
                 }
@@ -81,9 +73,6 @@ let sendGroqRequest = function(description) {
         }
     });
 };
-
-
-
 
 
 let req = new XMLHttpRequest();
@@ -99,7 +88,6 @@ req.onreadystatechange = () => {
 
         // iterating on every item and creating toDoList from received data
         for (let t in loadedTodos) {
-            console.log(loadedTodos[t]);
             todoList.push(loadedTodos[t]);
         }
     }
@@ -113,25 +101,15 @@ req.setRequestHeader("X-Master-Key", JSONBIN_API_KEY);
 req.send();
 
 
-
 // jsonbinio API - updating data on external data source
 let updateJSONBin = function() {
     let req = new XMLHttpRequest();
-
-    req.onreadystatechange = () => {
-        if (req.readyState == XMLHttpRequest.DONE) {
-            console.log(req.responseText);
-        }
-    };
 
     // PUT request - updates data on remote data source(jsonbinio)
     // ALL DATA WILL BE OVERWRITTEN DURING THIS OPERATION, SO ALL ITEMS FROM TODOLIST WILL BE SEND TO THE JSONBINIO
     req.open("PUT", "https://api.jsonbin.io/v3/b/".concat(JSONBIN_BIN_ID), true);
     req.setRequestHeader("Content-Type", "application/json");
     req.setRequestHeader("X-Master-Key", JSONBIN_API_KEY);
-
-
-    console.log(JSON.stringify(todoList));
 
     //converting todoList to JSON and sending it to remote data source
     req.send(JSON.stringify(todoList));
@@ -214,24 +192,11 @@ let updateTodoList = function(list = todoList) {
     }
 }
 
-
 // deleteTodo function - deletes specified item from toDoList and updates remote jsonbin data source
 let deleteTodo = function(index) {
     todoList.splice(index, 1);
     updateJSONBin();
 }
-
-
-async function createCategory(description) {
-    try {
-        let createdCategory = await(sendGroqRequest(description));
-        console.log("Created category: " + createdCategory);
-        
-    } catch(error) {
-        console.log("Error while creating the category: " + error);
-    }
-}
-
 
 // function for adding item to todoList - adds item locally and updates item on remote data source(jsonbin)
 async function addTodo() {
@@ -244,10 +209,7 @@ async function addTodo() {
     let newDesc = inputDesc.value;
     let newPlace = inputPlace.value;
     let newDate = new Date(inputDate.value);
-
-    //console.log("newCategory: " + newCategory);
-    let newCategory = await sendGroqRequest(newDesc);
-    console.log("new category: " + newCategory);
+    let newCategory = await sendCategoryGroqRequest(newDesc);
 
     let newTodo = {
         title: newTitle,
